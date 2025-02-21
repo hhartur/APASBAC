@@ -1,12 +1,72 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Login</title>
-    <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-    
-</body>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <form id="loginForm">
+      <h1>Login</h1>
+
+      <input type="text" id="username" placeholder="Username" required />
+      <input type="password" id="password" placeholder="Password" required />
+
+      <input type="submit" value="Login" />
+    </form>
+
+    <script>
+      document
+        .getElementById("loginForm")
+        .addEventListener("submit", (event) => {
+          event.preventDefault(); // Evita o envio do formulário padrão (recarregar a página)
+
+          // Captura os valores dos campos de entrada
+          const username = document.getElementById("username").value;
+          const password = document.getElementById("password").value;
+
+          // Dados que serão enviados no POST
+          const data = {
+            username: username,
+            password: password,
+          };
+
+          // Requisição POST usando fetch
+          fetch("http://localhost:3000/login", {
+            method: "POST", // Método HTTP
+            headers: {
+              "Content-Type": "application/json", // Define o tipo de conteúdo como JSON
+            },
+            body: JSON.stringify(data), // Converte o objeto para JSON
+          })
+            .then((response) => {
+              // Verifica se a resposta foi bem-sucedida (status 200-299)
+              if (!response.ok) {
+                throw new Error(`Erro na requisição: ${response.status}`);
+              }
+              return response.json(); // Converte a resposta para JSON
+            })
+            .then((data) => {
+              console.log("Sucesso:", data);
+              // Aqui você pode fazer algo com a resposta, como redirecionar ou mostrar uma mensagem
+              if (data.success) {
+                alert("Login realizado com sucesso!");
+                // Redirecionar para outra página, por exemplo:
+                window.location.href = "/index.html";
+              } else {
+                alert("Credenciais inválidas. Tente novamente.");
+              }
+            })
+            .catch((error) => {
+              console.error("Erro:", error);
+              alert(
+                "Ocorreu um erro durante o login. Tente novamente mais tarde."
+              );
+            });
+
+            
+        });
+    </script>
+  </body>
 </html>
