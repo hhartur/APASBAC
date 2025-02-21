@@ -1,74 +1,77 @@
 const express = require("express");
-const mysql = require("mysql2");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const path = require("path");
 const jwt = require("jsonwebtoken");
+const { Client } = require("pg");
 
 const app = express();
 
+const SECRET_KEY = "secreto";
+
 // Middlewares
-app.use(bodyParser.json()); // Para analisar o corpo das requisições como JSON
-app.use(cors()); // Para permitir requisições de outros domínios
-app.use(express.static(path.join(__dirname, "public"))); // Para servir arquivos estáticos
+app.use(bodyParser.json());
+app.use(cors());
+app.use(express.static(path.join(__dirname, "public")));
 
-// Configuração do MySQL
-const dbHost = "localhost";
-const dbUser = "root";
-const dbPass = "";
-const dbName = "apasbac";
-
-const connection = mysql.createConnection({
-  host: dbHost,
-  user: dbUser,
-  password: dbPass,
-  database: dbName,
+// Configuração do PostgreSQL
+const client = new Client({
+  connectionString: process.env.DATABASE_URL, // URL do banco de dados
+  ssl: {
+    rejectUnauthorized: false,
+  },
 });
 
-// Conectar ao MySQL
-connection.connect((err) => {
-  if (err) {
-    console.error("Erro ao conectar ao MySQL:", err);
-    return;
-  }
-  console.log("Conectado ao MySQL");
-});
+client.connect()
+  .then(() => console.log("Conectado ao PostgreSQL"))
+  .catch((err) => console.error("Erro ao conectar ao PostgreSQL:", err));
 
 // Rota básica para teste
 app.get("/", (req, res) => {
   res.send("Servidor rodando!");
 });
 
-app.post("/login", (req, res) => {
+// Rota de login
+app.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
-  const verifyQuery = "SELECT * FROM users WHERE username = ?";
-  connection.execute(verifyQuery, [username], (err, result) => {
-    if (err) {
-      return res.status(500).json({ error: "Erro no servidor" });
-    }
+  try {
+    const query = "SELECT * FROM users WHERE username = $1";
+    const result = await client.query(query, [username]);
 
-    if (result.length > 0 && result[0].password === password) {
-      const token = jwt.sign({ userId: result[0].id }, "secreto", {
+    if (result.rows.length > 0 && result.rows[0].password === password) {
+      const token = jwt.sign({ userId: result.rows[0].id }, SECRET_KEY, {
         expiresIn: "1h",
       });
-      return res.json({ sucess: true, token });
+      return res.json({ success: true, token });
     } else {
-      return res
-        .status(401)
-        .json({ sucess: false, error: "Credenciais inválidas" });
+      return res.status(401).json({ success: false, error: "Credenciais inválidas" });
     }
+  } catch (err) {
+    console.error("Erro no login:", err);
+    return res.status(500).json({ error: "Erro no servidor" });
+  }
+});
+
+// Rota protegida
+app.get("/protected", (req, res) => {
+  const token = req.headers["authorization"];
+
+  if (!token) {
+    return res.status(401).json({ success: false, message: "Token não fornecido" });
+  }
+
+  jwt.verify(token, SECRET_KEY, (err, decoded) => {
+    if (err) {
+      return res.status(401).json({ success: false, message: "Usuário não logado" });
+    }
+
+    res.json({ success: true, user: decoded });
   });
 });
 
-app.get("/protected", (req, res)=>{
-    const token = req.header['authorization']
-
-    if(!token){
-
-    }
-})
-
-app.listen(3000, () => {
-  console.log("Rodando na porta: 3000");
+// Iniciar o servidor
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Rodando na porta: ${PORT}`);
 });

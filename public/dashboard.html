@@ -1,11 +1,49 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dashboard</title>
-</head>
-<body>
+  </head>
+  <body>
     <h1>Dashboard</h1>
-</body>
+
+    <button id="logout">Logout</button>
+
+    <script>
+        document.getElementById("logout").addEventListener("click", ()=>{
+            const token = localStorage.getItem("token")
+            console.log(token)
+            localStorage.removeItem("token")
+
+            window.location.href = 'index.html';
+        })
+
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const token = localStorage.getItem("token");
+
+
+
+        fetch("http://localhost:3000/protected", {
+          method: "GET",
+          headers: {
+            Authorization: token, // Envia o token no cabeçalho
+          },
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              console.log("Dados protegidos:", data);
+            } else {
+              alert("Acesso negado: " + data.message);
+              window.location.href = 'index.html';
+            }
+          })
+          .catch((error) => {
+            console.error("Erro:", error);
+          });
+      });
+    </script>
+  </body>
 </html>
