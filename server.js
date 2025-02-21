@@ -3,6 +3,7 @@ const mysql = require("mysql2");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const path = require("path");
+const jwt = require("jsonwebtoken");
 
 const app = express();
 
@@ -42,18 +43,32 @@ app.post("/login", (req, res) => {
   const { username, password } = req.body;
 
   const verifyQuery = "SELECT * FROM users WHERE username = ?";
-  connection.execute(verifyQuery, username, (err, result) => {
+  connection.execute(verifyQuery, [username], (err, result) => {
     if (err) {
       return res.status(500).json({ error: "Erro no servidor" });
     }
 
-    
+    if (result.length > 0 && result[0].password === password) {
+      const token = jwt.sign({ userId: result[0].id }, "secreto", {
+        expiresIn: "1h",
+      });
+      return res.json({ sucess: true, token });
+    } else {
+      return res
+        .status(401)
+        .json({ sucess: false, error: "Credenciais inválidas" });
+    }
   });
 });
+
+app.get("/protected", (req, res)=>{
+    const token = req.header['authorization']
+
+    if(!token){
+
+    }
+})
 
 app.listen(3000, () => {
   console.log("Rodando na porta: 3000");
 });
-
-// Exportar o app e a conexão com o MySQL
-module.exports = { app, connection };

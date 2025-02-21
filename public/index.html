@@ -41,19 +41,15 @@
             body: JSON.stringify(data), // Converte o objeto para JSON
           })
             .then((response) => {
-              // Verifica se a resposta foi bem-sucedida (status 200-299)
               if (!response.ok) {
                 throw new Error(`Erro na requisição: ${response.status}`);
               }
-              return response.json(); // Converte a resposta para JSON
+              return response.json();
             })
             .then((data) => {
-              console.log("Sucesso:", data);
-              // Aqui você pode fazer algo com a resposta, como redirecionar ou mostrar uma mensagem
-              if (data.success) {
+              if (data.sucess) {
                 alert("Login realizado com sucesso!");
-                // Redirecionar para outra página, por exemplo:
-                window.location.href = "/index.html";
+                window.location.href = "/dashboard.html"; // Certifique-se de que a página está correta
               } else {
                 alert("Credenciais inválidas. Tente novamente.");
               }
@@ -64,8 +60,6 @@
                 "Ocorreu um erro durante o login. Tente novamente mais tarde."
               );
             });
-
-            
         });
     </script>
   </body>
